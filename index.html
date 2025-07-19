@@ -4,16 +4,18 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ImageOptimizer – Client-Side Image Compressor</title>
-  <meta name="description" content="ImageOptimizer by Bocaletto Luca – Compress and resize images entirely in the browser. Supports PNG, JPEG & WebP output, adjustable quality and max dimensions.">
-  <meta name="keywords" content="ImageOptimizer, image compressor, png compressor, browser, client-side, resize, quality, webp, jpeg">
+  <meta name="description" content="ImageOptimizer: compress and resize PNG, JPEG or WebP images entirely in the browser. Displays original and compressed dimensions & size, with download links.">
+  <meta name="keywords" content="image compressor, client-side, browser, PNG, JPEG, WebP, resize, quality">
   <meta name="author" content="Bocaletto Luca">
   <link rel="canonical" href="https://bocaletto-luca.github.io/ImageOptimizer/index.html"/>
 
   <!-- Open Graph -->
   <meta property="og:title" content="ImageOptimizer – Client-Side Image Compressor"/>
-  <meta property="og:description" content="Compress and resize PNG, JPEG or WebP images directly in your browser with ImageOptimizer."/>
+  <meta property="og:description" content="Compress and resize images in your browser, view before/after dimensions & sizes."/>
   <meta property="og:type" content="website"/>
   <meta property="og:url" content="https://bocaletto-luca.github.io/ImageOptimizer/index.html"/>
+
+  <!-- JSON-LD Structured Data -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -25,7 +27,8 @@
       "@type": "Person",
       "name": "Bocaletto Luca",
       "url": "https://github.com/bocaletto-luca"
-    }
+    },
+    "applicationCategory": "Utilities"
   }
   </script>
 
@@ -36,6 +39,7 @@
       --text: #333;
       --primary: #0066cc;
       --accent: #28a745;
+      --border: #ccc;
     }
     [data-theme="dark"] {
       --bg: #1e1e1e;
@@ -43,6 +47,7 @@
       --text: #ddd;
       --primary: #339af0;
       --accent: #5cb85c;
+      --border: #555;
     }
     * { box-sizing:border-box; margin:0; padding:0; }
     body {
@@ -55,49 +60,52 @@
     main {
       flex:1; max-width:960px; width:100%; margin:1rem auto; padding:1rem;
     }
-    .controls {
-      display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1rem;
-    }
-    .controls label {
-      display:flex; flex-direction:column; font-size:.9rem;
-    }
-    .controls input[type="range"],
-    .controls input[type="number"],
-    .controls select {
-      margin-top:.2rem; padding:.4rem;
-    }
-    .controls button {
-      padding:.5rem 1rem; background:var(--accent); color:#fff;
-      border:none; border-radius:4px; cursor:pointer;
-      transition:background .2s;
-    }
-    .controls button:hover { background:#218838; }
-
     #dropZone {
-      border:2px dashed #aaa; border-radius:6px;
-      padding:2rem; text-align:center; color:#777;
-      background:var(--card); margin-bottom:1rem;
-      cursor:pointer;
+      border:2px dashed var(--border); border-radius:6px;
+      padding:2rem; text-align:center; margin-bottom:1rem;
+      background:var(--card); cursor:pointer;
     }
     #dropZone.dragover {
       border-color:var(--primary); color:var(--primary);
     }
+    .controls {
+      display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1rem;
+      align-items:flex-end;
+    }
+    .controls label {
+      display:flex; flex-direction:column; font-size:.9rem;
+    }
+    .controls input,
+    .controls select,
+    .controls button {
+      margin-top:.2rem; padding:.5rem; font-size:1rem;
+      border:1px solid var(--border); border-radius:4px;
+      background:var(--card); color:var(--text);
+    }
+    .controls button {
+      background:var(--accent); color:#fff; border:none;
+      cursor:pointer; transition:background .2s;
+    }
+    .controls button:hover { background: #218838; }
     #gallery {
-      display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
       gap:1rem;
     }
-    .preview {
-      background:var(--card); border-radius:6px; padding:.5rem;
-      box-shadow:0 2px 4px rgba(0,0,0,0.1); display:flex;
-      flex-direction:column; align-items:center;
+    .card {
+      background:var(--card); border-radius:6px;
+      padding:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.1);
     }
-    .preview img {
-      max-width:100%; height:auto; border-radius:4px;
+    .card img {
+      max-width:100%; display:block; border-radius:4px;
     }
-    .info { margin-top:.5rem; font-size:.9rem; text-align:center; }
-    .info span { display:block; margin-top:.2rem; }
-    .info .download {
-      margin-top:.4rem; color:var(--primary); text-decoration:underline;
+    .info {
+      margin-top:.5rem; font-size:.9rem; line-height:1.3;
+      color:var(--text);
+    }
+    .info span { display:block; }
+    .info a.download {
+      display:inline-block; margin-top:.5rem;
+      color:var(--primary); text-decoration:underline;
       cursor:pointer;
     }
   </style>
@@ -105,31 +113,35 @@
 <body data-theme="light">
   <header>
     <h1>ImageOptimizer</h1>
-    <p>Compress &amp; Resize Images Client-Side — No Uploads</p>
+    <p>Compress &amp; Resize Images in the Browser</p>
   </header>
 
   <main>
-    <div id="dropZone">Drag &amp; drop images here or click to select files</div>
+    <div id="dropZone">Click or Drag &amp; Drop Images Here</div>
 
     <div class="controls">
       <label>
-        Format
+        Output Format
         <select id="formatSelect">
           <option value="image/jpeg">JPEG</option>
           <option value="image/png">PNG</option>
           <option value="image/webp">WebP</option>
         </select>
       </label>
+
       <label>
-        Quality (<span id="qualityValue">0.8</span>)
+        Quality: <span id="qualityValue">0.8</span>
         <input type="range" id="qualityRange" min="0.1" max="1" step="0.05" value="0.8"/>
       </label>
+
       <label>
         Max Width (px)
         <input type="number" id="maxWidth" placeholder="e.g. 800" min="1"/>
       </label>
-      <button id="btnCompress">Compress All</button>
-      <button id="btnTheme">🌙 Dark Mode</button>
+
+      <button id="compressBtn">Compress All</button>
+      <button id="clearBtn">Clear All</button>
+      <button id="themeBtn">🌙 Dark Mode</button>
       <input type="file" id="fileInput" accept="image/*" multiple style="display:none"/>
     </div>
 
@@ -145,22 +157,23 @@
   document.addEventListener('DOMContentLoaded', () => {
     const dropZone    = document.getElementById('dropZone');
     const fileInput   = document.getElementById('fileInput');
+    const gallery     = document.getElementById('gallery');
     const formatSel   = document.getElementById('formatSelect');
     const qualityRng  = document.getElementById('qualityRange');
     const qualityVal  = document.getElementById('qualityValue');
     const maxWidthIn  = document.getElementById('maxWidth');
-    const btnCompress = document.getElementById('btnCompress');
-    const btnTheme    = document.getElementById('btnTheme');
-    const gallery     = document.getElementById('gallery');
+    const compressBtn = document.getElementById('compressBtn');
+    const clearBtn    = document.getElementById('clearBtn');
+    const themeBtn    = document.getElementById('themeBtn');
     const body        = document.body;
 
     let files = [];
 
     // Theme toggle
-    btnTheme.addEventListener('click', () => {
-      const next = body.dataset.theme === 'light' ? 'dark' : 'light';
-      body.dataset.theme = next;
-      btnTheme.textContent = next === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+    themeBtn.addEventListener('click', () => {
+      const theme = body.dataset.theme === 'light' ? 'dark' : 'light';
+      body.dataset.theme = theme;
+      themeBtn.textContent = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
     });
 
     // Quality display
@@ -168,96 +181,129 @@
       qualityVal.textContent = qualityRng.value;
     });
 
-    // File picker
+    // Open file picker
     dropZone.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', e => handleFiles(e.target.files));
 
-    // Drag & drop
+    // Drag & drop styling
     ['dragenter','dragover'].forEach(evt => {
       dropZone.addEventListener(evt, e => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
+        e.preventDefault(); dropZone.classList.add('dragover');
       });
     });
     ['dragleave','drop'].forEach(evt => {
       dropZone.addEventListener(evt, e => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
+        e.preventDefault(); dropZone.classList.remove('dragover');
       });
     });
     dropZone.addEventListener('drop', e => {
       handleFiles(e.dataTransfer.files);
     });
 
+    // Clear all
+    clearBtn.addEventListener('click', () => {
+      files = [];
+      gallery.innerHTML = '';
+    });
+
     function handleFiles(fileList) {
       for (let f of fileList) {
-        if (!f.type.startsWith('image/')) continue;
-        files.push(f);
+        if (f.type.startsWith('image/')) files.push(f);
       }
-      renderPreviews();
+      renderGallery();
     }
 
-    function renderPreviews() {
+    function renderGallery() {
       gallery.innerHTML = '';
-      files.forEach((file, idx) => {
-        const div = document.createElement('div');
-        div.className = 'preview';
-        div.innerHTML = `
-          <img src="" alt="${file.name} preview"/>
+      files.forEach((file, i) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <img src="" alt="preview"/>
           <div class="info">
-            <span>${file.name}</span>
-            <span>Original: ${(file.size / 1024).toFixed(1)} KB</span>
-            <span class="result"></span>
+            <span><strong>${file.name}</strong></span>
+            <span>Original: <span class="orig-dims"></span>, <span class="orig-size"></span></span>
+            <span class="res-info"></span>
           </div>`;
-        gallery.appendChild(div);
+        gallery.appendChild(card);
 
-        const img = div.querySelector('img');
+        // Load preview and original metadata
+        const img = card.querySelector('img');
+        const origDims = card.querySelector('.orig-dims');
+        const origSize = card.querySelector('.orig-size');
         const reader = new FileReader();
-        reader.onload = () => img.src = reader.result;
+        reader.onload = () => {
+          img.src = reader.result;
+          const temp = new Image();
+          temp.onload = () => {
+            origDims.textContent = `${temp.width}px × ${temp.height}px`;
+            origSize.textContent = `${(file.size/1024).toFixed(1)} KB`;
+          };
+          temp.src = reader.result;
+        };
         reader.readAsDataURL(file);
       });
     }
 
-    btnCompress.addEventListener('click', () => {
-      const format  = formatSel.value;
+    compressBtn.addEventListener('click', async () => {
+      const format = formatSel.value;
       const quality = parseFloat(qualityRng.value);
-      const maxW    = parseInt(maxWidthIn.value) || null;
+      const maxW = parseInt(maxWidthIn.value) || null;
 
-      files.forEach((file, idx) => {
-        const preview = gallery.children[idx];
+      for (let i = 0; i < files.length; i++) {
+        await compressOne(files[i], i, format, quality, maxW);
+      }
+    });
+
+    function compressOne(file, index, format, quality, maxW) {
+      return new Promise(resolve => {
+        const card = gallery.children[index];
         const img = new Image();
-        const resultSpan = preview.querySelector('.result');
+        const info = card.querySelector('.res-info');
+        const reader = new FileReader();
 
-        img.onload = () => {
-          const w = maxW && img.width > maxW ? maxW : img.width;
-          const h = img.height * (w / img.width);
+        reader.onload = () => {
+          img.onload = () => {
+            // compute dimensions
+            const w = maxW && img.width > maxW ? maxW : img.width;
+            const h = img.height * (w / img.width);
 
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
+            // draw on canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
 
-          canvas.toBlob(blob => {
-            const url = URL.createObjectURL(blob);
-            preview.querySelector('img').src = url;
-            resultSpan.textContent = `Compressed: ${(blob.size / 1024).toFixed(1)} KB`;
+            // blob
+            canvas.toBlob(blob => {
+              const url = URL.createObjectURL(blob);
+              card.querySelector('img').src = url;
 
-            let dl = preview.querySelector('.download');
-            if (!dl) {
-              dl = document.createElement('a');
-              dl.className = 'download';
-              dl.textContent = 'Download';
-              preview.querySelector('.info').appendChild(dl);
-            }
-            dl.href = url;
-            dl.download = `optimized-${file.name}`;
-          }, format, quality);
+              // result info
+              const sizeKB = (blob.size/1024).toFixed(1);
+              info.textContent = `Compressed: ${w}px × ${h}px, ${sizeKB} KB`;
+
+              // download link
+              let dl = card.querySelector('a.download');
+              if (!dl) {
+                dl = document.createElement('a');
+                dl.className = 'download';
+                dl.textContent = 'Download';
+                card.querySelector('.info').appendChild(dl);
+              }
+              const ext = format.split('/')[1].replace('jpeg','jpg');
+              const base = file.name.replace(/\.[^/.]+$/,'');
+              dl.href = url;
+              dl.download = `optimized-${base}.${ext}`;
+
+              resolve();
+            }, format, quality);
+          };
+          img.src = reader.result;
         };
 
-        img.src = URL.createObjectURL(file);
+        reader.readAsDataURL(file);
       });
-    });
+    }
   });
   </script>
 </body>
