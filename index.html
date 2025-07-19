@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>ImageOptimizer – Client-Side Image Compressor</title>
-  <meta name="description" content="ImageOptimizer: compress and resize images (PNG, JPEG, WebP) directly in your browser. View before/after dimensions & sizes and download optimized files.">
-  <meta name="author" content="Bocaletto Luca">
+  <title>ImageOptimizer – Client-Side Compressor</title>
+  <meta name="description" content="Compress and resize images (PNG, JPEG, WebP) right in your browser. View original vs. compressed dimensions & sizes and download optimized files.">
   <style>
     :root {
       --bg: #f5f5f5; --card: #fff; --text: #333;
@@ -17,12 +16,13 @@
     }
     * { box-sizing:border-box; margin:0; padding:0; }
     body {
-      background:var(--bg); color:var(--text);
-      font-family:Arial,sans-serif; display:flex; flex-direction:column;
+      background: var(--bg); color: var(--text);
+      font-family: Arial,sans-serif;
+      display:flex; flex-direction:column;
       min-height:100vh;
     }
     header, footer {
-      background:var(--primary); color:#fff;
+      background: var(--primary); color:#fff;
       text-align:center; padding:1rem;
     }
     main {
@@ -31,36 +31,40 @@
     #dropZone {
       border:2px dashed var(--border); padding:2rem;
       text-align:center; border-radius:6px;
-      background:var(--card); cursor:pointer; margin-bottom:1rem;
-      transition:border-color .2s, color .2s;
+      background: var(--card); cursor:pointer;
+      transition: border-color .2s, color .2s;
     }
     #dropZone.dragover {
-      border-color:var(--primary); color:var(--primary);
+      border-color: var(--primary); color: var(--primary);
     }
     .controls {
-      display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1rem;
+      display:flex; flex-wrap:wrap; gap:.5rem;
+      margin:1rem 0;
       align-items:flex-end;
     }
     .controls label {
       display:flex; flex-direction:column; font-size:.9rem;
     }
     .controls input, .controls select, .controls button {
-      margin-top:.2rem; padding:.5rem; font-size:1rem;
-      border:1px solid var(--border); border-radius:4px;
-      background:var(--card); color:var(--text);
+      margin-top:.2rem; padding:.5rem; border:1px solid var(--border);
+      border-radius:4px; font-size:1rem;
+      background: var(--card); color: var(--text);
     }
     .controls button {
-      background:var(--accent); color:#fff; border:none;
-      cursor:pointer; transition:background .2s;
+      background: var(--accent); color:#fff; border:none;
+      cursor:pointer; transition: background .2s;
     }
     .controls button:hover { background:#218838; }
     #gallery {
-      display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
       gap:1rem;
     }
     .card {
-      background:var(--card); border-radius:6px;
-      padding:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.1);
+      background: var(--card);
+      border-radius:6px;
+      padding:1rem;
+      box-shadow:0 2px 4px rgba(0,0,0,0.1);
     }
     .card img {
       max-width:100%; border-radius:4px; display:block;
@@ -71,12 +75,11 @@
     .info span { display:block; }
     .info a.download {
       display:inline-block; margin-top:.5rem;
-      color:var(--primary); text-decoration:underline;
+      color: var(--primary); text-decoration:underline;
     }
   </style>
 </head>
 <body data-theme="light">
-
   <header>
     <h1>ImageOptimizer</h1>
     <p>Compress &amp; Resize Images in Your Browser</p>
@@ -109,15 +112,14 @@
       <button id="clearBtn">Clear All</button>
       <button id="themeBtn">🌙 Dark Mode</button>
 
-      <input type="file" id="fileInput" accept="image/*" multiple style="display:none"/>
+      <input type="file" id="fileInput" accept="image/*" multiple hidden/>
     </div>
 
     <div id="gallery"></div>
   </main>
 
   <footer>
-    © 2025 Bocaletto Luca |
-    <a href="https://github.com/bocaletto-luca/ImageOptimizer" target="_blank" rel="noopener">Repository</a>
+    © 2025 Bocaletto Luca
   </footer>
 
   <script>
@@ -136,11 +138,11 @@
 
     let images = [];
 
-    // Theme toggle
+    // Toggle theme
     themeBtn.addEventListener('click', () => {
-      const t = body.dataset.theme === 'light' ? 'dark' : 'light';
-      body.dataset.theme = t;
-      themeBtn.textContent = t === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+      const next = body.dataset.theme === 'light' ? 'dark' : 'light';
+      body.dataset.theme = next;
+      themeBtn.textContent = next === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
     });
 
     // Quality display
@@ -148,11 +150,11 @@
       qualityVal.textContent = qualityRng.value;
     });
 
-    // File picker
+    // Open file picker
     dropZone.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', e => handleFiles(e.target.files));
 
-    // Drag & Drop
+    // Drag & drop handlers
     ['dragenter','dragover'].forEach(evt => {
       dropZone.addEventListener(evt, e => {
         e.preventDefault();
@@ -165,105 +167,122 @@
         dropZone.classList.remove('dragover');
       });
     });
-    dropZone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      handleFiles(e.dataTransfer.files);
+    });
 
-    // Clear all
+    // Clear all images
     clearBtn.addEventListener('click', () => {
       images = [];
       gallery.innerHTML = '';
     });
 
+    // Add files
     function handleFiles(fileList) {
-      for (let f of fileList) {
-        if (!f.type.startsWith('image/')) continue;
-        images.push({ file: f });
+      for (let file of fileList) {
+        if (!file.type.startsWith('image/')) continue;
+        addImage(file);
       }
-      renderGallery();
     }
 
-    function renderGallery() {
-      gallery.innerHTML = '';
-      images.forEach((imgObj, i) => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <img src="" alt="preview"/>
-          <div class="info">
-            <span><strong>${imgObj.file.name}</strong></span>
-            <span>Original: <span class="orig-dims"></span>, <span class="orig-size"></span></span>
-            <span class="res-info"></span>
-          </div>`;
-        gallery.appendChild(card);
+    // Create image card
+    function addImage(file) {
+      const obj = { file };
+      images.push(obj);
 
-        const reader = new FileReader();
-        reader.onload = () => {
-          const img = new Image();
-          img.onload = () => {
-            imgObj.originalWidth  = img.width;
-            imgObj.originalHeight = img.height;
-            imgObj.originalSize   = imgObj.file.size;
-            const dimsSpan = card.querySelector('.orig-dims');
-            const sizeSpan = card.querySelector('.orig-size');
-            dimsSpan.textContent = `${img.width}px × ${img.height}px`;
-            sizeSpan.textContent = `${(imgObj.file.size/1024).toFixed(1)} KB`;
-            card.querySelector('img').src = reader.result;
-          };
-          img.src = reader.result;
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const imgEl = document.createElement('img');
+      imgEl.alt = 'preview';
+
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = `
+        <span><strong>${file.name}</strong></span>
+        <span class="orig"></span>
+        <span class="res"></span>
+      `;
+
+      card.append(imgEl, info);
+      gallery.appendChild(card);
+
+      obj.card = card;
+      obj.imgEl = imgEl;
+      obj.info  = info;
+
+      // Load original
+      const reader = new FileReader();
+      reader.onload = e => {
+        imgEl.src = e.target.result;
+        const tmp = new Image();
+        tmp.onload = () => {
+          obj.origWidth  = tmp.width;
+          obj.origHeight = tmp.height;
+          obj.origSize   = file.size;
+          const origSpan = info.querySelector('.orig');
+          origSpan.textContent = 
+            `Original: ${tmp.width}px × ${tmp.height}px, ${(file.size/1024).toFixed(1)} KB`;
         };
-        reader.readAsDataURL(imgObj.file);
-      });
+        tmp.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
+    // Compress all
     compressBtn.addEventListener('click', async () => {
       const format  = formatSel.value;
       const quality = parseFloat(qualityRng.value);
       const maxW    = parseInt(maxWidthIn.value) || null;
 
-      for (let i = 0; i < images.length; i++) {
-        await compressImage(images[i], i, format, quality, maxW);
+      for (let obj of images) {
+        await compressImage(obj, format, quality, maxW);
       }
     });
 
-    function compressImage(imgObj, index, format, quality, maxW) {
+    // Compress one image
+    function compressImage(obj, format, quality, maxW) {
       return new Promise(resolve => {
         const reader = new FileReader();
         reader.onload = () => {
           const img = new Image();
           img.onload = () => {
-            // compute new size
             const w = maxW && img.width > maxW ? maxW : img.width;
             const h = img.height * (w / img.width);
 
-            // draw
             const canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
 
-            // toBlob
             canvas.toBlob(blob => {
-              imgObj.compressedBlob = blob;
-              imgObj.compressedWidth  = w;
-              imgObj.compressedHeight = h;
-              imgObj.compressedSize   = blob.size;
+              obj.blob = blob;
+              obj.compWidth  = w;
+              obj.compHeight = h;
+              obj.compSize   = blob.size;
 
-              // update UI
-              const card = gallery.children[index];
-              card.querySelector('img').src = URL.createObjectURL(blob);
-              const info = card.querySelector('.res-info');
-              info.textContent = `Compressed: ${w}px × ${h}px, ${(blob.size/1024).toFixed(1)} KB`;
+              // update preview
+              const url = URL.createObjectURL(blob);
+              obj.imgEl.src = url;
 
-              // download link
-              let dl = card.querySelector('a.download');
+              // update info
+              const resSpan = obj.info.querySelector('.res');
+              resSpan.textContent = 
+                `Compressed: ${w}px × ${h}px, ${(blob.size/1024).toFixed(1)} KB`;
+
+              // create download link
+              let dl = obj.info.querySelector('a.download');
               if (!dl) {
                 dl = document.createElement('a');
                 dl.className = 'download';
                 dl.textContent = 'Download';
-                card.querySelector('.info').appendChild(dl);
+                obj.info.appendChild(dl);
               }
-              const ext = format.split('/')[1].replace('jpeg','jpg');
-              const base = imgObj.file.name.replace(/\.[^/.]+$/,'');
-              dl.href = URL.createObjectURL(blob);
+              let ext = format.split('/')[1];
+              if (ext === 'jpeg') ext = 'jpg';
+              const base = obj.file.name.replace(/\.[^/.]+$/, '');
+              dl.href = url;
               dl.download = `optimized-${base}.${ext}`;
 
               resolve();
@@ -271,7 +290,7 @@
           };
           img.src = reader.result;
         };
-        reader.readAsDataURL(imgObj.file);
+        reader.readAsDataURL(obj.file);
       });
     }
   });
